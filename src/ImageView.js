@@ -635,15 +635,13 @@ export default class ImageView extends React.Component {
         const isNextVisible =
             imageScale === imageInitialScale && imageIndex < images.length - 1;
 
-        console.log('scroll value ', this.state.imageZIndex)
-
         return (
             <Modal
                 transparent
                 visible={isVisible}
                 animationType={animationType}
                 onRequestClose={() => { }}
-            // supportedOrientations={['portrait', 'landscape']}
+                supportedOrientations={['portrait', 'landscape']}
 
             >
                 <SafeAreaView style={{ flex: 1, backgroundColor: 'black', }} forceInset={this.state.hideStatusBar ? { top: 'never' } : {}}>
@@ -674,6 +672,11 @@ export default class ImageView extends React.Component {
                             onMomentumScrollBegin={this.onMomentumScrollBegin}
                             onMomentumScrollEnd={this.onMomentumScrollEnd}
                         />
+                        {
+                            this.props.showMoreText ?
+                                <View style={{ position: 'absolute', width: Dimensions.get('window').width, height: Dimensions.get('window').height, backgroundColor: this.props.backgroundColorOnShowMore, zIndex: 10 }} /> :
+                                null
+                        }
                         {prev &&
                             isPrevVisible &&
                             React.createElement(prev, { onPress: this.scrollToPrev })}
