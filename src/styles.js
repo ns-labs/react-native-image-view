@@ -1,8 +1,8 @@
-import {StyleSheet} from 'react-native';
+import { StyleSheet } from 'react-native';
 
-const HEADER_HEIGHT = 60;
+const HEADER_HEIGHT = 40;
 
-export default function createStyles({screenWidth, screenHeight}) {
+export default function createStyles({ screenWidth, screenHeight }) {
     return StyleSheet.create({
         underlay: {
             position: 'absolute',
