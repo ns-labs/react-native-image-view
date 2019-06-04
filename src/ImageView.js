@@ -406,7 +406,7 @@ export default class ImageView extends React.Component {
         const { width, height } = image;
 
         if (!width || !height) {
-            return { opacity: 0 };
+            return { opacity: 0, height: 1 };//passing height as 1 since IOS checks whether their is width and heigth, if no returns nulls
         }
 
         // very strange caching, fix it with changing size to 1 pixel
@@ -599,7 +599,7 @@ export default class ImageView extends React.Component {
 
     renderImage = ({ item: image, index }: { item: *, index: number }): * => {
         const loaded = image.loaded && image.width && image.height;
-
+        
         return (
             <View
                 style={styles.imageContainer}
@@ -611,8 +611,13 @@ export default class ImageView extends React.Component {
                     style={this.getImageStyle(image, index)}
                     onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
+                    onError={(error): void => {
+                        const { images } = this.state;
+                        images[index] = { ...images[index], error: true };
+                        this.setState({ images });
+                    }}
                 />
-                {!loaded && <ActivityIndicator style={styles.loading} />}
+                {!loaded ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
             </View>
         );
     };
