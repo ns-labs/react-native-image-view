@@ -28,6 +28,7 @@ import {
 
 import createStyles from './styles';
 import { Close, Prev, Next } from './controls';
+import Orientation from 'react-native-orientation';
 
 const IMAGE_SPEED_FOR_CLOSE = 1.1;
 const SCALE_MAXIMUM = 5;
@@ -77,7 +78,8 @@ export default class ImageView extends React.Component {
             isFlatListRerendered: false,
             screenDimensions: initialScreenDimensions,
             imageZIndex: 0,
-            hideStatusBar: false
+            hideStatusBar: false,
+            rotated: false,
         };
         this.glideAlwaysTimer = null;
         this.listRef = null;
@@ -116,6 +118,7 @@ export default class ImageView extends React.Component {
     }
 
     componentDidMount() {
+        Orientation.unlockAllOrientations();
         styles = createStyles(this.state.screenDimensions);
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
@@ -165,6 +168,7 @@ export default class ImageView extends React.Component {
     }
 
     componentWillUnmount() {
+        Orientation.lockToPortrait();
         Dimensions.removeEventListener('change', this.onChangeDimension);
 
         if (this.glideAlwaysTimer) {
@@ -177,6 +181,15 @@ export default class ImageView extends React.Component {
             screenWidth: window.width,
             screenHeight: window.height,
         };
+        if (window.width > window.height) {
+            this.setState({
+                rotated: true
+            })
+        } else {
+            this.setState({
+                rotated: false
+            })
+        }
 
         this.setState({ screenDimensions });
         styles = createStyles(screenDimensions);
@@ -416,11 +429,7 @@ export default class ImageView extends React.Component {
             screenDimensions
         );
         const translateValue = new Animated.ValueXY({ x, y });
-
-        const transform =
-            index === imageIndex
-                ? this.imageTranslateValue.getTranslateTransform()
-                : translateValue.getTranslateTransform();
+        const transform = translateValue.getTranslateTransform();
 
         const scale =
             index === imageIndex
@@ -428,7 +437,6 @@ export default class ImageView extends React.Component {
                 : this.getInitialScale(index);
         // $FlowFixMe
         transform.push({ scale });
-
         return { width, height, transform };
     }
 
@@ -599,16 +607,16 @@ export default class ImageView extends React.Component {
 
     renderImage = ({ item: image, index }: { item: *, index: number }): * => {
         const loaded = image.loaded && image.width && image.height;
-        
+
         return (
             <View
-                style={styles.imageContainer}
+                style={[styles.imageContainer]}
                 onStartShouldSetResponder={(): boolean => true}
             >
                 <Animated.Image
                     resizeMode="cover"
                     source={image.source}
-                    style={this.getImageStyle(image, index)}
+                    style={[this.getImageStyle(image, index)]}
                     onLoad={(): void => this.onImageLoaded(index)}
                     {...this.panResponder.panHandlers}
                     onError={(error): void => {
@@ -621,6 +629,74 @@ export default class ImageView extends React.Component {
             </View>
         );
     };
+    content() {
+        const { animationType, renderFooter, backgroundColor } = this.props;
+        const {
+            images,
+            imageIndex,
+            imageScale,
+            isVisible,
+            scrollEnabled,
+        } = this.state;
+
+        const { close, prev, next } = this.getControls();
+        const imageInitialScale = this.getInitialScale();
+
+        const isPrevVisible =
+            imageScale === imageInitialScale && imageIndex > 0;
+        const isNextVisible =
+            imageScale === imageInitialScale && imageIndex < images.length - 1;
+        return (
+            <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                <View
+                    style={[
+                        styles.header,
+                        {
+                            backgroundColor: 'transparent'
+                        },
+                    ]}
+                >
+                    {!this.state.hideStatusBar ? this.props.renderHeader : null}
+                </View>
+                <FlatList
+                    horizontal
+                    pagingEnabled
+                    data={images}
+                    scrollEnabled={!this.state.hideStatusBar}
+                    scrollEventThrottle={16}
+                    style={{ zIndex: this.state.imageZIndex, position: 'absolute' }}
+                    ref={this.onFlatListRender}
+                    renderSeparator={() => null}
+                    keyExtractor={this.listKeyExtractor}
+                    onScroll={this.onNextImage}
+                    renderItem={this.renderImage}
+                    getItemLayout={this.getItemLayout}
+                    onMomentumScrollBegin={this.onMomentumScrollBegin}
+                    onMomentumScrollEnd={this.onMomentumScrollEnd}
+                />
+                {
+                    this.props.showMoreText ?
+                        <View style={{ position: 'absolute', width: Dimensions.get('window').width, height: Dimensions.get('window').height, backgroundColor: this.props.backgroundColorOnShowMore, zIndex: 10 }} /> :
+                        null
+                }
+                {prev &&
+                    isPrevVisible &&
+                    React.createElement(prev, { onPress: this.scrollToPrev })}
+                {next &&
+                    isNextVisible &&
+                    React.createElement(next, { onPress: this.scrollToNext })}
+                {renderFooter && !this.state.hideStatusBar && (
+                    <View
+                        style={[styles.footer]}
+                    >
+                        {typeof renderFooter === 'function' &&
+                            images[imageIndex] &&
+                            renderFooter(images[imageIndex])}
+                    </View>
+                )}
+            </View>
+        )
+    }
 
     render(): Node {
         const { animationType, renderFooter, backgroundColor } = this.props;
@@ -649,61 +725,17 @@ export default class ImageView extends React.Component {
                 supportedOrientations={['portrait', 'landscape']}
 
             >
-                <SafeAreaView style={{ flex: 1, backgroundColor: 'black', }} forceInset={this.state.hideStatusBar ? { top: 'never' } : {}}>
-                    <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                        <View
-                            style={[
-                                styles.header,
-                                {
-                                    backgroundColor: 'transparent'
-                                },
-                            ]}
-                        >
-                            {!this.state.hideStatusBar ? this.props.renderHeader : null}
-                        </View>
-                        <FlatList
-                            horizontal
-                            pagingEnabled
-                            data={images}
-                            scrollEnabled={!this.state.hideStatusBar}
-                            scrollEventThrottle={16}
-                            style={{ zIndex: this.state.imageZIndex, position: 'absolute' }}
-                            ref={this.onFlatListRender}
-                            renderSeparator={() => null}
-                            keyExtractor={this.listKeyExtractor}
-                            onScroll={this.onNextImage}
-                            renderItem={this.renderImage}
-                            getItemLayout={this.getItemLayout}
-                            onMomentumScrollBegin={this.onMomentumScrollBegin}
-                            onMomentumScrollEnd={this.onMomentumScrollEnd}
-                        />
-                        {
-                            this.props.showMoreText ?
-                                <View style={{ position: 'absolute', width: Dimensions.get('window').width, height: Dimensions.get('window').height, backgroundColor: this.props.backgroundColorOnShowMore, zIndex: 10 }} /> :
-                                null
-                        }
-                        {prev &&
-                            isPrevVisible &&
-                            React.createElement(prev, { onPress: this.scrollToPrev })}
-                        {next &&
-                            isNextVisible &&
-                            React.createElement(next, { onPress: this.scrollToNext })}
-                        {renderFooter && !this.state.hideStatusBar && (
-                            <View
-                                style={[styles.footer]}
-                                onLayout={event => {
-                                    this.footerHeight = event.nativeEvent.layout.height;
-                                }}
-                            >
-                                {typeof renderFooter === 'function' &&
-                                    images[imageIndex] &&
-                                    renderFooter(images[imageIndex])}
-                            </View>
-                        )}
-                    </View>
-                </SafeAreaView>
+                {
+                    this.state.rotated ?
+                        <View style={{ flex: 1, backgroundColor: 'black', }}>
+                            {this.content()}
+                        </View> :
+                        <SafeAreaView style={{ flex: 1, backgroundColor: 'black', }} forceInset={this.state.hideStatusBar ? { top: 'never' } : {}}>
+                            {this.content()}
+                        </SafeAreaView>
+                }
                 {!this.state.hideStatusBar ?
-                    <SafeAreaView style={[{ backgroundColor: 'black', flex: 0 }]} /> : null
+                    <SafeAreaView style={[{ backgroundColor: this.state.rotated ? 'transparent' : 'black', flex: 0 }]} /> : null
                 }
             </Modal>
         );
