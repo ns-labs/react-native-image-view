@@ -8,11 +8,14 @@ import {
     FlatList,
     Modal,
     Platform,
+    Image,
     View,
     Text
 } from 'react-native';
-
 import { SafeAreaView } from 'react-navigation'
+import FastImage from 'react-native-fast-image';
+const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
+const { width, height } = Dimensions.get("window");
 
 import {
     addIndexesToImages,
@@ -372,11 +375,14 @@ export default class ImageView extends React.Component {
     }
 
     onImageLoaded(index: number) {
-        const { images } = this.state;
+        Image.getSize(this.state.images[index].source.uri, (width, height) => {
 
-        images[index] = { ...images[index], loaded: true };
+            const { images } = this.state;
 
-        this.setState({ images });
+            images[index] = { ...images[index], loaded: true, width: width, height: height };
+
+            this.setState({ images });
+        });
     }
 
     onMomentumScrollBegin = () => {
@@ -429,8 +435,11 @@ export default class ImageView extends React.Component {
             screenDimensions
         );
         const translateValue = new Animated.ValueXY({ x, y });
-        const transform = translateValue.getTranslateTransform();
-
+        // const transform = translateValue.getTranslateTransform();
+        const transform =
+            index !== imageIndex
+                ? this.imageTranslateValue.getTranslateTransform()
+                : translateValue.getTranslateTransform();
         const scale =
             index === imageIndex
                 ? this.imageScaleValue
@@ -606,14 +615,12 @@ export default class ImageView extends React.Component {
     };
 
     renderImage = ({ item: image, index }: { item: *, index: number }): * => {
-        const loaded = image.loaded && image.width && image.height;
-
         return (
             <View
                 style={[styles.imageContainer]}
                 onStartShouldSetResponder={(): boolean => true}
             >
-                <Animated.Image
+                <AnimatedFastImage
                     resizeMode="cover"
                     source={image.source}
                     style={[this.getImageStyle(image, index)]}
@@ -625,7 +632,7 @@ export default class ImageView extends React.Component {
                         this.setState({ images });
                     }}
                 />
-                {!loaded ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
+                {!(this.state.images[index].loaded && this.state.images[index].width && this.state.images[index].height) ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
             </View>
         );
     };
@@ -648,7 +655,7 @@ export default class ImageView extends React.Component {
             imageScale === imageInitialScale && imageIndex < images.length - 1;
         return (
             <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-                <View
+                <SafeAreaView
                     style={[
                         styles.header,
                         {
@@ -657,7 +664,7 @@ export default class ImageView extends React.Component {
                     ]}
                 >
                     {!this.state.hideStatusBar ? this.props.renderHeader : null}
-                </View>
+                </SafeAreaView>
                 <FlatList
                     horizontal
                     pagingEnabled
@@ -686,13 +693,13 @@ export default class ImageView extends React.Component {
                     isNextVisible &&
                     React.createElement(next, { onPress: this.scrollToNext })}
                 {renderFooter && !this.state.hideStatusBar && (
-                    <View
+                    <SafeAreaView
                         style={[styles.footer]}
                     >
                         {typeof renderFooter === 'function' &&
                             images[imageIndex] &&
                             renderFooter(images[imageIndex])}
-                    </View>
+                    </SafeAreaView>
                 )}
             </View>
         )
@@ -725,18 +732,9 @@ export default class ImageView extends React.Component {
                 supportedOrientations={['portrait', 'landscape']}
 
             >
-                {
-                    this.state.rotated ?
-                        <View style={{ flex: 1, backgroundColor: 'black', }}>
-                            {this.content()}
-                        </View> :
-                        <SafeAreaView style={{ flex: 1, backgroundColor: 'black', }} forceInset={this.state.hideStatusBar ? { top: 'never' } : {}}>
-                            {this.content()}
-                        </SafeAreaView>
-                }
-                {!this.state.hideStatusBar ?
-                    <SafeAreaView style={[{ backgroundColor: this.state.rotated ? 'transparent' : 'black', flex: 0 }]} /> : null
-                }
+                <View style={{ flex: 1, backgroundColor: 'black', }}>
+                    {this.content()}
+                </View>
             </Modal>
         );
     }
