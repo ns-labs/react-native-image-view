@@ -121,14 +121,17 @@ export default class ImageView extends React.Component {
     }
 
     componentDidMount() {
-        Orientation.unlockAllOrientations();
         styles = createStyles(this.state.screenDimensions);
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
 
     componentWillReceiveProps(nextProps) {
         const { images, imageIndex, isVisible } = this.state;
-
+        if (nextProps.isVisible) {
+            Orientation.unlockAllOrientations();
+        } else {
+            Orientation.lockToPortrait();
+        }
         if (
             typeof nextProps.isVisible !== 'undefined' &&
             nextProps.isVisible !== isVisible
@@ -171,7 +174,6 @@ export default class ImageView extends React.Component {
     }
 
     componentWillUnmount() {
-        Orientation.lockToPortrait();
         Dimensions.removeEventListener('change', this.onChangeDimension);
 
         if (this.glideAlwaysTimer) {
