@@ -1,5 +1,5 @@
 // @flow
-import {Image, PanResponder} from 'react-native';
+import { Image, PanResponder } from 'react-native';
 
 import {
     type EventType,
@@ -21,15 +21,13 @@ export const generatePanHandlers = (
     onRelease: (EventType, GestureState) => *
 ): * =>
     PanResponder.create({
-        onStartShouldSetPanResponder: (): boolean => true,
-        onStartShouldSetPanResponderCapture: (): boolean => true,
         onMoveShouldSetPanResponder: (): boolean => true,
         onMoveShouldSetPanResponderCapture: (): boolean => true,
         onPanResponderGrant: onStart,
         onPanResponderMove: onMove,
         onPanResponderRelease: onRelease,
         onPanResponderTerminate: onRelease,
-        onPanResponderTerminationRequest: (): void => {},
+        onPanResponderTerminationRequest: (): void => { },
         onShouldBlockNativeResponder: () => false,
     });
 
@@ -53,7 +51,7 @@ export const getDistance = (touches: Array<TouchType>): number => {
 export const calculateInitialScale = (
     imageWidth: number = 0,
     imageHeight: number = 0,
-    {screenWidth, screenHeight}: ScreenDimensionsType
+    { screenWidth, screenHeight }: ScreenDimensionsType
 ): number => {
     const screenRatio = screenHeight / screenWidth;
     const imageRatio = imageHeight / imageWidth;
@@ -72,7 +70,7 @@ export const calculateInitialScale = (
 export const calculateInitialTranslate = (
     imageWidth: number = 0,
     imageHeight: number = 0,
-    {screenWidth, screenHeight}: ScreenDimensionsType
+    { screenWidth, screenHeight }: ScreenDimensionsType
 ): TranslateType => {
     const getTranslate = (axis: string): number => {
         const imageSize = axis === 'x' ? imageWidth : imageHeight;
@@ -92,7 +90,7 @@ export const calculateInitialTranslate = (
 };
 
 export const getInitialParams = (
-    {width, height}: DimensionsType,
+    { width, height }: DimensionsType,
     screenDimensions: Object
 ): TransitionType => ({
     scale: calculateInitialScale(width, height, screenDimensions),
@@ -149,10 +147,10 @@ export const hexToRgb = (hex: string): number[] => {
 };
 
 export const addIndexesToImages = (images: ImageType[]): ImageType[] =>
-    images.map((image, index) => ({...image, index}));
+    images.map((image, index) => ({ ...image, index }));
 
 export const getImagesWithoutSize = (images: ImageType[]) =>
-    images.filter(({width, height}) => !width || !height);
+    images.filter(({ width, height }) => !width || !height);
 
 export const scalesAreEqual = (scaleA: number, scaleB: number): boolean =>
     Math.abs(scaleA - scaleB) < SCALE_EPSILON;
