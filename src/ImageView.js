@@ -10,6 +10,7 @@ import {
     Platform,
     Image,
     View,
+    TouchableWithoutFeedback,
     Text
 } from 'react-native';
 import { SafeAreaView } from 'react-navigation'
@@ -31,9 +32,8 @@ import {
 
 import createStyles from './styles';
 import { Close, Prev, Next } from './controls';
-import Orientation from 'react-native-orientation';
 
-const IMAGE_SPEED_FOR_CLOSE = 1.1;
+const IMAGE_SPEED_FOR_CLOSE = 0.1;
 const SCALE_MAXIMUM = 5;
 const HEADER_HEIGHT = 60;
 const SCALE_MAX_MULTIPLIER = 3;
@@ -83,6 +83,11 @@ export default class ImageView extends React.Component {
             imageZIndex: 0,
             hideStatusBar: false,
             rotated: false,
+            showClickableItems: true,
+            backgroundColor: "#rgba(0, 0, 0, 1)",
+            currentY: 0,
+            isScrolling: false,
+            rotating: false
         };
         this.glideAlwaysTimer = null;
         this.listRef = null;
@@ -127,11 +132,6 @@ export default class ImageView extends React.Component {
 
     componentWillReceiveProps(nextProps) {
         const { images, imageIndex, isVisible } = this.state;
-        if (nextProps.isVisible) {
-            Orientation.unlockAllOrientations();
-        } else {
-            Orientation.lockToPortrait();
-        }
         if (
             typeof nextProps.isVisible !== 'undefined' &&
             nextProps.isVisible !== isVisible
@@ -182,6 +182,9 @@ export default class ImageView extends React.Component {
     }
 
     onChangeDimension = ({ window }) => {
+        this.setState({
+            rotating: true
+        });
         const screenDimensions = {
             screenWidth: window.width,
             screenHeight: window.height,
@@ -198,8 +201,26 @@ export default class ImageView extends React.Component {
 
         this.setState({ screenDimensions });
         styles = createStyles(screenDimensions);
-
         this.onNextImagesReceived(this.props.images, this.state.imageIndex);
+        if (this.listRef) {
+            this.listRef.scrollToIndex({
+                index: this.state.imageIndex,
+                animated: false,
+            });
+            let index = this.state.imageIndex;
+            const nextTick = new Promise(resolve => setTimeout(resolve, 0));
+            nextTick.then(async () => {
+                await this.listRef.scrollToIndex({
+                    index: index,
+                    animated: false,
+                });
+                this.setState({
+                    rotating: false
+                })
+            })
+
+        }
+
     };
 
     onNextImagesReceived(images: Array, imageIndex: number = 0) {
@@ -282,9 +303,6 @@ export default class ImageView extends React.Component {
      * then disable scroll (for ScrollView)
      */
     onGestureMove(event, gestureState) {
-        if (this.isScrolling && this.state.scrollEnabled) {
-            return;
-        }
         this.setState({ imageZIndex: 150 })
 
         if (this.currentTouchesNum === 1 && event.touches.length === 2) {
@@ -315,7 +333,6 @@ export default class ImageView extends React.Component {
         if (imageScale * height > screenHeight) {
             this.imageTranslateValue.y.setValue(y + dy);
         }
-
         // if image not scaled and fits to the screen
         if (
             isSwipeCloseEnabled &&
@@ -325,11 +342,13 @@ export default class ImageView extends React.Component {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
             );
-
-            this.imageTranslateValue.y.setValue(y + dy);
             this.modalBackgroundOpacity.setValue(
                 backgroundOpacity > 1 ? 1 : backgroundOpacity
             );
+            this.setState({
+                backgroundColor: "#rgba(0, 0, 0, " + (1 - Math.abs(dy / 100)) + ")",
+                currentY: dy
+            })
         }
 
         const currentDistance = getDistance(touches);
@@ -373,7 +392,27 @@ export default class ImageView extends React.Component {
         this.imageScaleValue.setValue(imageInitialScale);
         this.setState({
             hideStatusBar: false
-        })
+        });
+        const { imageScale } = this.state;
+        const { dx, dy, vy } = gestureState;
+        const { isSwipeCloseEnabled } = this.props;
+        const { x, y } = this.calculateNextTranslate(dx, dy, imageScale);
+        if (
+            isSwipeCloseEnabled &&
+            // scale === imageInitialScale &&
+            Math.abs(dy) >= 100
+            && !this.state.isScrolling
+        ) {
+            Animated.timing(this.imageTranslateValue.y, {
+                toValue: y + 400 * vy,
+                duration: 150,
+            }).start(this.close);
+        } else {
+            this.setState({
+                backgroundColor: "#rgba(0, 0, 0, 1)",
+                currentY: 0
+            })
+        }
     }
 
     onImageLoaded(index: number) {
@@ -389,6 +428,9 @@ export default class ImageView extends React.Component {
 
     onMomentumScrollBegin = () => {
         this.isScrolling = true;
+        this.setState({
+            isScrolling: true
+        })
         if (this.glideAlwaysTimer) {
             // If FlatList started gliding then prevent glideAlways scrolling
             clearTimeout(this.glideAlwaysTimer);
@@ -397,6 +439,9 @@ export default class ImageView extends React.Component {
 
     onMomentumScrollEnd = () => {
         this.isScrolling = false;
+        this.setState({
+            isScrolling: false
+        })
     };
 
     getItemLayout = (_: *, index: number): Object => {
@@ -425,7 +470,6 @@ export default class ImageView extends React.Component {
     ): { width?: number, height?: number, transform?: any, opacity?: number } {
         const { imageIndex, screenDimensions } = this.state;
         const { width, height } = image;
-
         if (!width || !height) {
             return { opacity: 0, height: 1 };//passing height as 1 since IOS checks whether their is width and heigth, if no returns nulls
         }
@@ -609,32 +653,52 @@ export default class ImageView extends React.Component {
         this.state.images.indexOf(image).toString();
 
     close = () => {
-        this.setState({ isVisible: false });
+        this.setState({
+            isVisible: false,
+            backgroundColor: "#rgba(0, 0, 0, 1)",
+            currentY: 0
+        });
 
         if (typeof this.props.onClose === 'function') {
             this.props.onClose();
         }
+
+        this.props.onClose()
     };
 
     renderImage = ({ item: image, index }: { item: *, index: number }): * => {
         return (
-            <View
-                style={[styles.imageContainer]}
-                onStartShouldSetResponder={(): boolean => true}
-            >
-                <AnimatedFastImage
-                    resizeMode="cover"
-                    source={image.source}
-                    style={[this.getImageStyle(image, index)]}
-                    onLoad={(): void => this.onImageLoaded(index)}
+            <View {...this.panResponder.panHandlers}>
+                <TouchableWithoutFeedback
+                    style={[styles.imageContainer, { zIndex: 5 }]}
+                    onStartShouldSetResponder={(): boolean => true}
+                    onPress={() => this.setState(prevState => ({ showClickableItems: !prevState.showClickableItems }))}
                     {...this.panResponder.panHandlers}
-                    onError={(error): void => {
-                        const { images } = this.state;
-                        images[index] = { ...images[index], error: true };
-                        this.setState({ images });
-                    }}
-                />
-                {!(this.state.images[index].loaded && this.state.images[index].width && this.state.images[index].height) ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
+                >
+                    <View
+                        style={[styles.imageContainer]}
+                        onStartShouldSetResponder={(): boolean => true}
+                    >
+                        <TouchableWithoutFeedback
+                            onPress={() => this.setState(prevState => ({ showClickableItems: !prevState.showClickableItems }))}
+                            {...this.panResponder.panHandlers}
+                        >
+                            <AnimatedFastImage
+                                resizeMode="cover"
+                                source={image.source}
+                                style={[this.getImageStyle(image, index), { top: this.state.currentY }]}
+                                onLoad={(): void => this.onImageLoaded(index)}
+                                {...this.panResponder.panHandlers}
+                                onError={(error): void => {
+                                    const { images } = this.state;
+                                    images[index] = { ...images[index], error: true };
+                                    this.setState({ images });
+                                }}
+                            />
+                        </TouchableWithoutFeedback>
+                        {!(this.state.images[index].loaded && this.state.images[index].width && this.state.images[index].height) ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
+                    </View>
+                </TouchableWithoutFeedback>
             </View>
         );
     };
@@ -665,7 +729,7 @@ export default class ImageView extends React.Component {
                         },
                     ]}
                 >
-                    {!this.state.hideStatusBar ? this.props.renderHeader : null}
+                    {!this.state.hideStatusBar && this.state.showClickableItems ? this.props.renderHeader : null}
                 </SafeAreaView>
                 <FlatList
                     horizontal
@@ -694,7 +758,7 @@ export default class ImageView extends React.Component {
                 {next &&
                     isNextVisible &&
                     React.createElement(next, { onPress: this.scrollToNext })}
-                {renderFooter && !this.state.hideStatusBar && (
+                {renderFooter && !this.state.hideStatusBar && this.state.showClickableItems && (
                     <SafeAreaView
                         style={[styles.footer]}
                     >
@@ -734,7 +798,7 @@ export default class ImageView extends React.Component {
                 supportedOrientations={['portrait', 'landscape']}
 
             >
-                <View style={{ flex: 1, backgroundColor: 'black', }}>
+                <View style={{ flex: 1, backgroundColor: this.state.backgroundColor, }}>
                     {this.content()}
                 </View>
             </Modal>
