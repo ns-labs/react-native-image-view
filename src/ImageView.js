@@ -86,7 +86,8 @@ export default class ImageView extends React.Component {
             showClickableItems: true,
             backgroundColor: "#rgba(0, 0, 0, 1)",
             currentY: 0,
-            isScrolling: false
+            isScrolling: false,
+            rotating: false
         };
         this.glideAlwaysTimer = null;
         this.listRef = null;
@@ -181,6 +182,9 @@ export default class ImageView extends React.Component {
     }
 
     onChangeDimension = ({ window }) => {
+        this.setState({
+            rotating: true
+        });
         const screenDimensions = {
             screenWidth: window.width,
             screenHeight: window.height,
@@ -197,8 +201,26 @@ export default class ImageView extends React.Component {
 
         this.setState({ screenDimensions });
         styles = createStyles(screenDimensions);
-
         this.onNextImagesReceived(this.props.images, this.state.imageIndex);
+        if (this.listRef) {
+            this.listRef.scrollToIndex({
+                index: this.state.imageIndex,
+                animated: false,
+            });
+            let index = this.state.imageIndex;
+            const nextTick = new Promise(resolve => setTimeout(resolve, 0));
+            nextTick.then(async () => {
+                await this.listRef.scrollToIndex({
+                    index: index,
+                    animated: false,
+                });
+                this.setState({
+                    rotating: false
+                })
+            })
+
+        }
+
     };
 
     onNextImagesReceived(images: Array, imageIndex: number = 0) {
@@ -281,9 +303,6 @@ export default class ImageView extends React.Component {
      * then disable scroll (for ScrollView)
      */
     onGestureMove(event, gestureState) {
-        if (this.isScrolling && this.state.scrollEnabled) {
-            return;
-        }
         this.setState({ imageZIndex: 150 })
 
         if (this.currentTouchesNum === 1 && event.touches.length === 2) {
@@ -318,7 +337,7 @@ export default class ImageView extends React.Component {
         if (
             isSwipeCloseEnabled &&
             scalesAreEqual(imageScale, imageInitialScale) &&
-            height * imageInitialScale < screenHeight && !this.state.isScrolling
+            height * imageInitialScale < screenHeight
         ) {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
@@ -451,14 +470,6 @@ export default class ImageView extends React.Component {
     ): { width?: number, height?: number, transform?: any, opacity?: number } {
         const { imageIndex, screenDimensions } = this.state;
         const { width, height } = image;
-        // let imgWidth, imgHeight;
-        // if(Dimensions.get('window').width - width > Dimensions.get('window').height - height){
-        //     imgWidth = Dimensions.get('window').width
-        // } else {
-        //     imgHeight = Dimensions.get('window').width
-        // }
-        // console.warn('index width ', image);
-
         if (!width || !height) {
             return { opacity: 0, height: 1 };//passing height as 1 since IOS checks whether their is width and heigth, if no returns nulls
         }
