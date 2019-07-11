@@ -824,7 +824,7 @@ export default class ImageView extends React.Component {
                 supportedOrientations={['portrait', 'landscape']}
 
             >
-                <View style={{ flex: 1, backgroundColor: this.state.backgroundColor, }}>
+                <View style={{ flex: 1, backgroundColor: this.props.backgroundColor, }}>
                     {this.content()}
                 </View>
             </Modal>
