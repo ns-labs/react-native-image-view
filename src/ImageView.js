@@ -84,7 +84,7 @@ export default class ImageView extends React.Component {
             hideStatusBar: false,
             rotated: false,
             showClickableItems: true,
-            backgroundColor: "#rgba(0, 0, 0, 1)",
+            backgroundColor: this.props.backgroundColor? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
             currentY: 0,
             isScrolling: false,
             rotating: false
@@ -346,9 +346,13 @@ export default class ImageView extends React.Component {
                 backgroundOpacity > 1 ? 1 : backgroundOpacity
             );
             this.setState({
-                backgroundColor: "#rgba(0, 0, 0, " + (1 - Math.abs(dy / 100)) + ")",
                 currentY: dy
             })
+            if(Math.abs(dy) > 20) {
+                this.setState({
+                    backgroundColor: this.props.backgroundColor ? this.extractBackgroundAndAddOpacity(this.props.backgroundColor, (1 - Math.abs(dy / 100))): "#rgba(0, 0, 0, " + (1 - Math.abs(dy / 100)) + ")"
+                })
+            }
         }
 
         const currentDistance = getDistance(touches);
@@ -383,6 +387,14 @@ export default class ImageView extends React.Component {
         this.currentTouchesNum = event.touches.length;
     }
 
+    extractBackgroundAndAddOpacity(backgroundColor, opacity) {
+        if(backgroundColor.includes('rgba')) {
+            return backgroundColor.substring(0, backgroundColor.lastIndexOf(',') + 1) + opacity + ')'
+        } else {
+            return backgroundColor.substring(0, backgroundColor.lastIndexOf(')')) + opacity + ')'
+        }
+    }
+
     onGestureRelease(event, gestureState) {
         this.setState({ imageZIndex: 0 })
         if (this.glideAlwaysTimer) {
@@ -409,7 +421,7 @@ export default class ImageView extends React.Component {
             }).start(this.close);
         } else {
             this.setState({
-                backgroundColor: "#rgba(0, 0, 0, 1)",
+                backgroundColor: this.props.backgroundColor ? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
                 currentY: 0
             })
         }
@@ -469,6 +481,20 @@ export default class ImageView extends React.Component {
         index: number
     ): { width?: number, height?: number, transform?: any, opacity?: number } {
         const { imageIndex, screenDimensions } = this.state;
+        if(image.width < getScreenDimensions().screenWidth && image.height < getScreenDimensions().screenHeight && ( image.width > 200 || image.height > 200)) {
+            widthDiff = getScreenDimensions().screenWidth - image.width;
+            heightDiff = getScreenDimensions().screenHeight - image.height;
+            if(widthDiff<heightDiff) {
+                aspectRatio = image.width / image.height
+                image.width = getScreenDimensions().screenWidth
+                image.height = image.width / aspectRatio
+            }
+            else {
+                aspectRatio = image.height / image.width
+                image.height = getScreenDimensions().screenHeight
+                image.width = image.height / aspectRatio
+            }
+        }
         const { width, height } = image;
         if (!width || !height) {
             return { opacity: 0, height: 1 };//passing height as 1 since IOS checks whether their is width and heigth, if no returns nulls
@@ -655,7 +681,7 @@ export default class ImageView extends React.Component {
     close = () => {
         this.setState({
             isVisible: false,
-            backgroundColor: "#rgba(0, 0, 0, 1)",
+            backgroundColor: this.props.backgroundColor ? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
             currentY: 0
         });
 
