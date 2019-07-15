@@ -32,6 +32,7 @@ export default function createStyles({ screenWidth, screenHeight }) {
             position: 'absolute',
             top: screenHeight / 2 - 20,
             alignSelf: 'center',
+            zIndex: -1
         },
         footer: {
             position: 'absolute',
