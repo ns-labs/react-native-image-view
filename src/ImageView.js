@@ -130,45 +130,47 @@ export default class ImageView extends React.Component {
         Dimensions.addEventListener('change', this.onChangeDimension);
     }
 
-    componentWillReceiveProps(nextProps) {
-        const { images, imageIndex, isVisible } = this.state;
-        if (
-            typeof nextProps.isVisible !== 'undefined' &&
-            nextProps.isVisible !== isVisible
-        ) {
-            this.onNextImagesReceived(nextProps.images, nextProps.imageIndex);
-
+    componentDidUpdate(prevProps) {
+        if(this.props.isVisible != prevProps.isVisible || this.props.images != prevProps.images || this.props.imageIndex != prevProps.imageIndex){
+            const { images, imageIndex, isVisible } = this.state;
             if (
-                images !== nextProps.images ||
-                imageIndex !== nextProps.imageIndex
+                typeof this.props.isVisible !== 'undefined' &&
+                this.props.isVisible !== isVisible
             ) {
-                const imagesWithoutSize = getImagesWithoutSize(
-                    addIndexesToImages(nextProps.images)
-                );
-
-                if (imagesWithoutSize.length) {
-                    Promise.all(fetchImageSize(imagesWithoutSize)).then(
-                        updatedImages =>
-                            this.onNextImagesReceived(
-                                this.setSizeForImages(updatedImages),
-                                nextProps.imageIndex
-                            )
+                this.onNextImagesReceived(this.props.images, this.props.imageIndex);
+    
+                if (
+                    images !== this.props.images ||
+                    imageIndex !== this.props.imageIndex
+                ) {
+                    const imagesWithoutSize = getImagesWithoutSize(
+                        addIndexesToImages(this.props.images)
                     );
+    
+                    if (imagesWithoutSize.length) {
+                        Promise.all(fetchImageSize(imagesWithoutSize)).then(
+                            updatedImages =>
+                                this.onNextImagesReceived(
+                                    this.setSizeForImages(updatedImages),
+                                    this.props.imageIndex
+                                )
+                        );
+                    }
                 }
-            }
-
-            this.setState({
-                isVisible: nextProps.isVisible,
-                isFlatListRerendered: false,
-            });
-
-            this.modalBackgroundOpacity.setValue(0);
-
-            if (nextProps.isVisible) {
-                Animated.timing(this.modalAnimation, {
-                    duration: 400,
-                    toValue: 1,
-                }).start();
+    
+                this.setState({
+                    isVisible: this.props.isVisible,
+                    isFlatListRerendered: false,
+                });
+    
+                this.modalBackgroundOpacity.setValue(0);
+    
+                if (this.props.isVisible) {
+                    Animated.timing(this.modalAnimation, {
+                        duration: 400,
+                        toValue: 1,
+                    }).start();
+                }
             }
         }
     }
