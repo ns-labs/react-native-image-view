@@ -414,12 +414,12 @@ export default class ImageView extends React.Component {
         if (
             isSwipeCloseEnabled &&
             // scale === imageInitialScale &&
-            Math.abs(dy) >= 100
+            Math.abs(dy) >= 60
             && !this.state.isScrolling
         ) {
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
-                duration: 150,
+                duration: 100,
             }).start(this.close);
         } else {
             this.setState({
@@ -684,6 +684,7 @@ export default class ImageView extends React.Component {
         this.setState({
             isVisible: false,
             backgroundColor: this.props.backgroundColor ? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
+            showClickableItems: true,
             currentY: 0
         });
 
