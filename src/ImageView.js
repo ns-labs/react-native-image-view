@@ -338,7 +338,6 @@ export default class ImageView extends React.Component {
         // if image not scaled and fits to the screen
         if (
             isSwipeCloseEnabled &&
-            scalesAreEqual(imageScale, imageInitialScale) &&
             height * imageInitialScale < screenHeight
         ) {
             const backgroundOpacity = Math.abs(
@@ -371,7 +370,7 @@ export default class ImageView extends React.Component {
             return;
         }
 
-        let nextScale = getScale(currentDistance, initialDistance) * imageScale;
+        let nextScale = getScale(currentDistance, initialDistance) * imageInitialScale;
 
         if (nextScale < imageInitialScale) {
             nextScale = imageInitialScale;
@@ -414,12 +413,12 @@ export default class ImageView extends React.Component {
         if (
             isSwipeCloseEnabled &&
             // scale === imageInitialScale &&
-            Math.abs(dy) >= 100
+            Math.abs(dy) >= 60
             && !this.state.isScrolling
         ) {
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
-                duration: 150,
+                duration: 100,
             }).start(this.close);
         } else {
             this.setState({
@@ -467,7 +466,6 @@ export default class ImageView extends React.Component {
     getInitialScale(index?: number): number {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
         const imageParams = this.imageInitialParams[imageIndex];
-
         return imageParams ? imageParams.scale : 1;
     }
 
@@ -553,7 +551,7 @@ export default class ImageView extends React.Component {
 
         const { images } = this.state;
 
-        return images.map((image, index) => {
+        var updatedImages = images.map((image, index) => {
             const nextImageSize = nextImages.find(
                 nextImage => nextImage.index === index
             );
@@ -567,6 +565,10 @@ export default class ImageView extends React.Component {
 
             return image;
         });
+        this.onNextImagesReceived(updatedImages, this.props.imageIndex);
+        this.setState({
+            images: updatedImages
+        })
     };
 
     scrollToNext = () => {
@@ -684,6 +686,7 @@ export default class ImageView extends React.Component {
         this.setState({
             isVisible: false,
             backgroundColor: this.props.backgroundColor ? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
+            showClickableItems: true,
             currentY: 0
         });
 
