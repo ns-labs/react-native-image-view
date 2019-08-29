@@ -172,6 +172,10 @@ export default class ImageView extends React.Component {
                     }).start();
                 }
             }
+        } else if(this.props.backgroundColor != prevProps.backgroundColor) {
+            this.setState({
+                backgroundColor: this.props.backgroundColor? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
+            })
         }
     }
 
@@ -727,7 +731,7 @@ export default class ImageView extends React.Component {
                                 }}
                             />
                         </TouchableWithoutFeedback>
-                        {!(this.state.images[index].loaded && this.state.images[index].width && this.state.images[index].height) ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} /> : null}
+                        {!(this.state.images[index].loaded && this.state.images[index].width && this.state.images[index].height) ? this.state.images[index].error ? this.props.showOnError : <ActivityIndicator style={styles.loading} color={this.props.activityIndicatorColor}/> : null}
                     </View>
                 </TouchableWithoutFeedback>
             </View>
