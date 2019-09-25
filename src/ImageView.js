@@ -718,7 +718,7 @@ export default class ImageView extends React.Component {
                             onPress={() => this.setState(prevState => ({ showClickableItems: !prevState.showClickableItems }))}
                             {...this.panResponder.panHandlers}
                         >
-                            <AnimatedFastImage
+                            <Animated.Image
                                 resizeMode="cover"
                                 source={image.source}
                                 style={[this.getImageStyle(image, index), { top: this.state.currentY }]}
