@@ -11,7 +11,8 @@ import {
     Image,
     View,
     TouchableWithoutFeedback,
-    Text
+    Text,
+    StatusBar
 } from 'react-native';
 import { SafeAreaView } from 'react-navigation'
 import FastImage from 'react-native-fast-image';
@@ -834,6 +835,10 @@ export default class ImageView extends React.Component {
 
             >
                 <View style={{ flex: 1, backgroundColor: this.state.backgroundColor, }}>
+                {
+                    Platform.OS === 'ios' ?
+                    <StatusBar hidden={true}/> : null
+                }
                     {this.content()}
                 </View>
             </Modal>
