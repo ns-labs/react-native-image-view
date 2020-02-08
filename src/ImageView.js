@@ -343,7 +343,7 @@ export default class ImageView extends React.Component {
         // if image not scaled and fits to the screen
         if (
             isSwipeCloseEnabled &&
-            height * imageInitialScale < screenHeight
+            height * imageInitialScale < screenHeight && this.currentTouchesNum == 1
         ) {
             const backgroundOpacity = Math.abs(
                 dy * BACKGROUND_OPACITY_MULTIPLIER
@@ -354,11 +354,11 @@ export default class ImageView extends React.Component {
             this.setState({
                 currentY: dy
             })
-            if(Math.abs(dy) > 20) {
-                this.setState({
-                    backgroundColor: this.props.backgroundColor ? this.extractBackgroundAndAddOpacity(this.props.backgroundColor, (1 - Math.abs(dy / 100))): "#rgba(0, 0, 0, " + (1 - Math.abs(dy / 100)) + ")"
-                })
-            }
+            // if(Math.abs(dy) > 20) {
+            //     this.setState({
+            //         backgroundColor: this.props.backgroundColor ? this.extractBackgroundAndAddOpacity(this.props.backgroundColor, (1 - Math.abs(dy / 100))): "#rgba(0, 0, 0, " + (1 - Math.abs(dy / 100)) + ")"
+            //     })
+            // }
         }
 
         const currentDistance = getDistance(touches);
@@ -382,7 +382,9 @@ export default class ImageView extends React.Component {
         }
         if (nextScale != imageInitialScale) {
             this.setState({
-                hideStatusBar: true
+                hideStatusBar: true,
+                backgroundColor: this.props.backgroundColor? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
+
             })
         }
         // else if (nextScale > SCALE_MAXIMUM) {
@@ -417,14 +419,15 @@ export default class ImageView extends React.Component {
         const { x, y } = this.calculateNextTranslate(dx, dy, imageScale);
         if (
             isSwipeCloseEnabled &&
-            // scale === imageInitialScale &&
+            this.currentTouchesNum < 2 &&
             Math.abs(dy) >= 60
             && !this.state.isScrolling
         ) {
+            this.close();
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
                 duration: 100,
-            }).start(this.close);
+            });
         } else {
             this.setState({
                 backgroundColor: this.props.backgroundColor ? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
