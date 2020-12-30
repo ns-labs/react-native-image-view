@@ -12,9 +12,10 @@ import {
     View,
     TouchableWithoutFeedback,
     Text,
-    StatusBar
+    StatusBar,
+    SafeAreaView
 } from 'react-native';
-import { SafeAreaView } from 'react-navigation'
+// import { SafeAreaView } from 'react-navigation'
 import FastImage from 'react-native-fast-image';
 const AnimatedFastImage = Animated.createAnimatedComponent(FastImage);
 const { width, height } = Dimensions.get("window");
