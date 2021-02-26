@@ -788,6 +788,8 @@ export default class ImageView extends React.Component {
                     getItemLayout={this.getItemLayout}
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
+                    showsHorizontalScrollIndicator={this.props.showsHorizontalScrollIndicator}
+                    showsVerticalScrollIndicator={this.props.showsVerticalScrollIndicator}
                 />
                 {
                     this.props.showMoreText ?
