@@ -475,7 +475,7 @@ export default class ImageView extends React.Component {
     getInitialScale(index?: number): number {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
         const imageParams = this.imageInitialParams[imageIndex];
-        return imageParams ? imageParams.scale : 1;
+        return (imageParams ? imageParams.scale : 1);
     }
 
     getInitialTranslate(index?: number) {
@@ -765,8 +765,9 @@ export default class ImageView extends React.Component {
                     style={[
                         styles.header,
                         {
-                            backgroundColor: 'transparent'
-                        },
+                            backgroundColor: 'transparent', 
+                            ...this.props.headerStyle
+                        }
                     ]}
                 >
                     {!this.state.hideStatusBar && this.state.showClickableItems ? this.props.renderHeader : null}
@@ -777,7 +778,8 @@ export default class ImageView extends React.Component {
                     data={images}
                     scrollEnabled={!this.state.hideStatusBar}
                     scrollEventThrottle={16}
-                    style={{ zIndex: this.state.imageZIndex, position: 'absolute' }}
+                    style={[{ zIndex: this.state.imageZIndex, ...this.props.flatListStyle }]}
+                    contentContainerStyle={{ ...this.props.contentContainerStyle }}
                     ref={this.onFlatListRender}
                     renderSeparator={() => null}
                     keyExtractor={this.listKeyExtractor}
@@ -800,7 +802,7 @@ export default class ImageView extends React.Component {
                     React.createElement(next, { onPress: this.scrollToNext })}
                 {renderFooter && !this.state.hideStatusBar && this.state.showClickableItems && (
                     <SafeAreaView
-                        style={[styles.footer]}
+                        style={[styles.footer, { ...this.props.footerStyle }]}
                     >
                         {typeof renderFooter === 'function' &&
                             images[imageIndex] &&
