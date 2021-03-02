@@ -366,7 +366,7 @@ export default class ImageView extends React.Component {
         const initialDistance = getDistance(this.initialTouches);
 
         const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE;
-        this.setState({ scrollEnabled });
+        this.setState({ scrollEnabled, showClickableItems: false });
 
         if (!initialDistance) {
             return;
@@ -385,7 +385,6 @@ export default class ImageView extends React.Component {
             this.setState({
                 hideStatusBar: true,
                 backgroundColor: this.props.backgroundColor? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
-
             })
         }
         // else if (nextScale > SCALE_MAXIMUM) {
@@ -412,7 +411,8 @@ export default class ImageView extends React.Component {
         const imageInitialScale = this.getInitialScale();
         this.imageScaleValue.setValue(imageInitialScale);
         this.setState({
-            hideStatusBar: false
+            hideStatusBar: false,
+            showClickableItems: true
         });
         const { imageScale } = this.state;
         const { dx, dy, vy } = gestureState;
@@ -475,7 +475,7 @@ export default class ImageView extends React.Component {
     getInitialScale(index?: number): number {
         const imageIndex = index !== undefined ? index : this.state.imageIndex;
         const imageParams = this.imageInitialParams[imageIndex];
-        return imageParams ? imageParams.scale : 1;
+        return (imageParams ? imageParams.scale : 1);
     }
 
     getInitialTranslate(index?: number) {
@@ -765,8 +765,9 @@ export default class ImageView extends React.Component {
                     style={[
                         styles.header,
                         {
-                            backgroundColor: 'transparent'
-                        },
+                            backgroundColor: 'transparent', 
+                            ...this.props.headerStyle
+                        }
                     ]}
                 >
                     {!this.state.hideStatusBar && this.state.showClickableItems ? this.props.renderHeader : null}
@@ -777,7 +778,8 @@ export default class ImageView extends React.Component {
                     data={images}
                     scrollEnabled={!this.state.hideStatusBar}
                     scrollEventThrottle={16}
-                    style={{ zIndex: this.state.imageZIndex, position: 'absolute' }}
+                    style={[{ zIndex: this.state.imageZIndex, ...this.props.flatListStyle }]}
+                    contentContainerStyle={{ ...this.props.contentContainerStyle }}
                     ref={this.onFlatListRender}
                     renderSeparator={() => null}
                     keyExtractor={this.listKeyExtractor}
@@ -786,6 +788,8 @@ export default class ImageView extends React.Component {
                     getItemLayout={this.getItemLayout}
                     onMomentumScrollBegin={this.onMomentumScrollBegin}
                     onMomentumScrollEnd={this.onMomentumScrollEnd}
+                    showsHorizontalScrollIndicator={this.props.showsHorizontalScrollIndicator}
+                    showsVerticalScrollIndicator={this.props.showsVerticalScrollIndicator}
                 />
                 {
                     this.props.showMoreText ?
@@ -800,7 +804,7 @@ export default class ImageView extends React.Component {
                     React.createElement(next, { onPress: this.scrollToNext })}
                 {renderFooter && !this.state.hideStatusBar && this.state.showClickableItems && (
                     <SafeAreaView
-                        style={[styles.footer]}
+                        style={[styles.footer, { ...this.props.footerStyle }]}
                     >
                         {typeof renderFooter === 'function' &&
                             images[imageIndex] &&
