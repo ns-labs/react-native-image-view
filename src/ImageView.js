@@ -366,7 +366,7 @@ export default class ImageView extends React.Component {
         const initialDistance = getDistance(this.initialTouches);
 
         const scrollEnabled = Math.abs(dy) < FREEZE_SCROLL_DISTANCE;
-        this.setState({ scrollEnabled });
+        this.setState({ scrollEnabled, showClickableItems: false });
 
         if (!initialDistance) {
             return;
@@ -385,7 +385,6 @@ export default class ImageView extends React.Component {
             this.setState({
                 hideStatusBar: true,
                 backgroundColor: this.props.backgroundColor? this.props.backgroundColor : "#rgba(0, 0, 0, 1)",
-
             })
         }
         // else if (nextScale > SCALE_MAXIMUM) {
@@ -412,7 +411,8 @@ export default class ImageView extends React.Component {
         const imageInitialScale = this.getInitialScale();
         this.imageScaleValue.setValue(imageInitialScale);
         this.setState({
-            hideStatusBar: false
+            hideStatusBar: false,
+            showClickableItems: true
         });
         const { imageScale } = this.state;
         const { dx, dy, vy } = gestureState;
