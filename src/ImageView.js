@@ -109,11 +109,15 @@ export default class ImageView extends React.Component {
         this.imageTranslateValue = new Animated.ValueXY({ x, y });
 
         this.panResponder = generatePanHandlers(
-            (event): void => this.onGestureStart(event.nativeEvent),
-            (event, gestureState): void =>
-                this.onGestureMove(event.nativeEvent, gestureState),
-            (event, gestureState): void =>
-                this.onGestureRelease(event.nativeEvent, gestureState)
+            (event): void => {
+                this.onGestureStart(event.nativeEvent);
+            },
+            (event, gestureState): void => {
+                this.onGestureMove(event.nativeEvent, gestureState);
+            },
+            (event, gestureState): void => {
+                this.onGestureRelease(event.nativeEvent, gestureState);
+            }
         );
 
         const imagesWithoutSize = getImagesWithoutSize(
@@ -171,6 +175,7 @@ export default class ImageView extends React.Component {
                     Animated.timing(this.modalAnimation, {
                         duration: 400,
                         toValue: 1,
+                        useNativeDriver: true
                     }).start();
                 }
             }
@@ -412,7 +417,7 @@ export default class ImageView extends React.Component {
         this.imageScaleValue.setValue(imageInitialScale);
         this.setState({
             hideStatusBar: false,
-            showClickableItems: true
+            showClickableItems: !this.state.showClickableItems
         });
         const { imageScale } = this.state;
         const { dx, dy, vy } = gestureState;
@@ -428,6 +433,7 @@ export default class ImageView extends React.Component {
             Animated.timing(this.imageTranslateValue.y, {
                 toValue: y + 400 * vy,
                 duration: 100,
+                useNativeDriver: true
             });
         } else {
             this.setState({
@@ -712,7 +718,7 @@ export default class ImageView extends React.Component {
                 <TouchableWithoutFeedback
                     style={[styles.imageContainer, { zIndex: 5 }]}
                     onStartShouldSetResponder={(): boolean => true}
-                    onPress={() => this.setState(prevState => ({ showClickableItems: !prevState.showClickableItems }))}
+                    onPress={() => this.toggleControls()}
                     {...this.panResponder.panHandlers}
                 >
                     <View
@@ -720,7 +726,7 @@ export default class ImageView extends React.Component {
                         onStartShouldSetResponder={(): boolean => true}
                     >
                         <TouchableWithoutFeedback
-                            onPress={() => this.setState(prevState => ({ showClickableItems: !prevState.showClickableItems }))}
+                            onPress={() => this.toggleControls()}
                             {...this.panResponder.panHandlers}
                         >
                             <Animated.Image
@@ -742,6 +748,11 @@ export default class ImageView extends React.Component {
             </View>
         );
     };
+
+    toggleControls = () => {
+        this.setState({ showClickableItems: !this.state.showClickableItems });
+    }
+
     content() {
         const { animationType, renderFooter, backgroundColor } = this.props;
         const {
